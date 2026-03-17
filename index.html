@@ -1,1 +1,255 @@
-デッコロッケ
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Crazy Climber FC Style</title>
+
+<style>
+
+body{
+margin:0;
+background:#000;
+color:white;
+font-family:monospace;
+text-align:center;
+}
+
+h1{
+margin:10px;
+}
+
+canvas{
+border:4px solid white;
+background:#5aa7ff;
+image-rendering: pixelated;
+}
+
+#info{
+margin-top:10px;
+font-size:14px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>CRAZY CLIMBER</h1>
+
+<canvas id="game" width="256" height="480"></canvas>
+
+<div id="info">
+A = 左手　L = 右手（交互に押す）
+</div>
+
+<script>
+
+const canvas=document.getElementById("game")
+const ctx=canvas.getContext("2d")
+
+let player={
+x:120,
+y:420
+}
+
+let lastHand=null
+let score=0
+
+let windows=[]
+let birds=[]
+
+const rowH=32
+const rows=40
+
+function makeBuilding(){
+
+for(let i=0;i<rows;i++){
+
+let y=i*rowH
+
+let left=Math.random()>0.2
+let right=Math.random()>0.2
+
+if(!left&&!right) left=true
+
+if(left) windows.push({x:40,y,break:Math.random()<0.1})
+if(right) windows.push({x:170,y,break:Math.random()<0.1})
+
+}
+
+}
+
+function drawWindow(w){
+
+ctx.fillStyle=w.break?"#777":"#222"
+ctx.fillRect(w.x,w.y,30,18)
+
+ctx.strokeStyle="#aaa"
+ctx.strokeRect(w.x,w.y,30,18)
+
+}
+
+function drawPlayer(){
+
+ctx.fillStyle="#ff0000"
+ctx.fillRect(player.x,player.y,16,16)
+
+ctx.fillStyle="#ffff00"
+
+ctx.fillRect(player.x-4,player.y+6,4,4)
+ctx.fillRect(player.x+16,player.y+6,4,4)
+
+}
+
+function climb(hand){
+
+if(hand===lastHand) return
+
+let tx=hand==="left"?40:170
+
+let target=windows.find(w=>{
+
+return Math.abs(w.y-player.y)<20 && w.x===tx
+
+})
+
+if(!target){
+fall()
+return
+}
+
+player.x=tx+6
+player.y-=rowH
+
+if(target.break){
+
+windows=windows.filter(w=>w!==target)
+
+}
+
+scroll()
+
+score+=10
+
+lastHand=hand
+
+}
+
+function scroll(){
+
+windows.forEach(w=>{
+w.y+=rowH
+})
+
+birds.forEach(b=>{
+b.y+=rowH
+})
+
+spawnBird()
+
+}
+
+function spawnBird(){
+
+if(Math.random()<0.3){
+
+birds.push({
+x:-20,
+y:Math.random()*400
+})
+
+}
+
+}
+
+function updateBirds(){
+
+birds.forEach(b=>{
+b.x+=2
+
+if(hit(b)) fall()
+
+})
+
+}
+
+function drawBird(b){
+
+ctx.fillStyle="#fff"
+
+ctx.fillRect(b.x,b.y,12,6)
+ctx.fillRect(b.x+4,b.y-2,6,4)
+
+}
+
+function hit(b){
+
+return(
+b.x<player.x+16 &&
+b.x+12>player.x &&
+b.y<player.y+16 &&
+b.y+6>player.y
+)
+
+}
+
+function fall(){
+
+let f=setInterval(()=>{
+
+player.y+=6
+
+if(player.y>480){
+
+clearInterval(f)
+
+alert("GAME OVER\nScore:"+score)
+
+location.reload()
+
+}
+
+},30)
+
+}
+
+document.addEventListener("keydown",e=>{
+
+if(e.key==="a"||e.key==="A") climb("left")
+
+if(e.key==="l"||e.key==="L") climb("right")
+
+})
+
+function draw(){
+
+ctx.clearRect(0,0,256,480)
+
+windows.forEach(drawWindow)
+
+birds.forEach(drawBird)
+
+drawPlayer()
+
+ctx.fillStyle="white"
+ctx.fillText("SCORE "+score,10,20)
+
+}
+
+function loop(){
+
+updateBirds()
+
+draw()
+
+requestAnimationFrame(loop)
+
+}
+
+makeBuilding()
+loop()
+
+</script>
+
+</body>
+</html>
